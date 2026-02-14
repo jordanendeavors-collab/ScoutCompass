@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>WOLFPACK 101 — Scout Compass Adventure</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a2e">
+<style>
+@font-face{font-family:'WP';src:local('Segoe UI'),local('Helvetica Neue'),local('Arial');font-display:swap}
+:root{
+--pm:#F5E6C8;--pd:#E8D5A8;--ink:#2C1810;--red:#DC143C;--dk-red:#8B0000;
+--grn:#2D5016;--blu:#1A6B8A;--gold:#DAA520;--org:#E8751A;--fg:#28A745;
+--tan:#C4A265;--bg:#1a1a2e;--bg2:#16213e;--bg3:#0d0d1f;
+--font-display:'WP',Impact,'Arial Black',sans-serif;
+--font-body:'WP','Segoe UI','Helvetica Neue',sans-serif;
+--font-mono:'Courier New','Lucida Console',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-body);background:var(--bg);overflow-x:hidden;-webkit-tap-highlight-color:transparent;color:var(--ink)}
+
+/* === LOGIN SCREEN === */
+#loginScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,var(--bg) 0%,#0f3460 50%,var(--dk-red) 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:opacity .5s}
+#loginScreen.hidden{opacity:0;pointer-events:none}
+.login-logo{font-family:var(--font-display);font-size:clamp(2rem,8vw,3.5rem);color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,.5);letter-spacing:4px;text-align:center;margin-bottom:5px;font-weight:900;text-transform:uppercase}
+.login-sub{color:rgba(255,215,0,.6);font-size:clamp(.7rem,2.5vw,.9rem);text-align:center;margin-bottom:30px;letter-spacing:2px;font-weight:700}
+.login-wolf{font-size:4rem;margin-bottom:10px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3))}
+.login-box{background:rgba(255,255,255,.06);backdrop-filter:blur(10px);border:2px solid rgba(218,165,32,.3);border-radius:12px;padding:24px;width:min(90vw,340px)}
+.login-box label{display:block;color:rgba(255,215,0,.5);font-size:.65rem;letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:4px}
+.login-box input{width:100%;padding:10px 12px;border:2px solid rgba(218,165,32,.2);border-radius:6px;background:rgba(0,0,0,.3);color:var(--gold);font-family:var(--font-mono);font-size:1rem;margin-bottom:14px;outline:none;transition:border-color .2s}
+.login-box input:focus{border-color:var(--gold)}
+.login-box input::placeholder{color:rgba(218,165,32,.25)}
+.login-btn{width:100%;padding:12px;border:2px solid var(--gold);border-radius:6px;background:linear-gradient(135deg,var(--red),var(--dk-red));color:var(--gold);font-family:var(--font-display);font-size:1.1rem;letter-spacing:3px;cursor:pointer;text-transform:uppercase;font-weight:900;transition:transform .1s,box-shadow .2s;box-shadow:0 4px 16px rgba(220,20,60,.3)}
+.login-btn:active{transform:scale(.97)}
+.login-btn:hover{box-shadow:0 6px 24px rgba(220,20,60,.5)}
+.login-err{color:var(--red);font-size:.75rem;text-align:center;margin-top:8px;min-height:20px;font-weight:700}
+.login-hint{color:rgba(255,255,255,.2);font-size:.6rem;text-align:center;margin-top:14px;letter-spacing:1px}
+
+/* === MAIN APP === */
+#app{display:none}
+#app.on{display:block}
+
+/* Tabs */
+.tabs{position:sticky;top:0;z-index:200;display:flex;background:var(--bg3);border-bottom:3px solid var(--gold);box-shadow:0 4px 20px rgba(0,0,0,.6);overflow-x:auto}
+.tb{flex:1;padding:6px 2px 4px;border:none;background:0 0;color:rgba(255,215,0,.25);font-family:var(--font-display);font-size:clamp(.5rem,1.8vw,.72rem);letter-spacing:1px;cursor:pointer;border-bottom:3px solid transparent;text-align:center;transition:.2s;white-space:nowrap;min-width:0;font-weight:900;text-transform:uppercase}
+.tb.on{color:var(--gold);border-bottom-color:var(--red);background:rgba(220,20,60,.06)}
+.tb:hover{color:var(--gold)}
+.tb i{display:block;font-style:normal;font-size:1rem;margin-bottom:1px}
+.tb.leader-only{display:none}
+.pnl{display:none;min-height:calc(100vh - 60px)}.pnl.on{display:block}
+
+/* Header */
+.hdr{background:linear-gradient(135deg,var(--red),var(--dk-red) 50%,var(--ink));padding:14px;text-align:center;border-bottom:4px solid var(--gold);position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;inset:0;opacity:.07;background:repeating-linear-gradient(45deg,transparent,transparent 20px,var(--gold) 20px,var(--gold) 21px)}
+.hdr h1{font-family:var(--font-display);font-size:clamp(1.2rem,4.5vw,2.2rem);color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,.5);letter-spacing:3px;position:relative;font-weight:900;text-transform:uppercase}
+.hdr .sub{color:#FFD700;font-size:clamp(.65rem,2.2vw,.9rem);font-weight:700;position:relative}
+.hdr .loc{color:rgba(255,215,0,.5);font-size:.65rem;margin-top:2px;position:relative}
+
+/* Scoreboard */
+.scb{background:linear-gradient(180deg,var(--bg),var(--bg2));padding:8px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:4px;border-bottom:3px solid var(--gold)}
+.sci{text-align:center}
+.scl{font-size:.5rem;color:rgba(255,215,0,.4);letter-spacing:2px;font-weight:700;text-transform:uppercase}
+.scv{font-family:var(--font-mono);font-size:1.3rem;color:var(--gold);font-weight:700;line-height:1.1}
+.scv.g{color:var(--fg)}
+
+/* === COMPASS PANEL === */
+.cpnl{padding:16px 12px 24px;background:radial-gradient(ellipse at 50% 40%,#1e2a4a,#0d0d1f 72%);display:flex;flex-direction:column;align-items:center;min-height:55vh}
+.cst{font-family:var(--font-mono);font-size:.6rem;letter-spacing:1.5px;padding:4px 12px;border-radius:18px;margin-bottom:8px;text-align:center;transition:.3s;max-width:95%}
+.cst.w{background:rgba(218,165,32,.12);color:var(--gold);border:1px solid rgba(218,165,32,.2)}
+.cst.ok{background:rgba(40,167,69,.12);color:var(--fg);border:1px solid rgba(40,167,69,.2)}
+.cst.no{background:rgba(140,140,140,.12);color:#aaa;border:1px solid rgba(140,140,140,.2)}
+.cst.dn{background:rgba(220,20,60,.12);color:var(--red);border:1px solid rgba(220,20,60,.2)}
+.actbtn{padding:10px 20px;border:2px solid var(--gold);border-radius:8px;background:linear-gradient(135deg,var(--red),var(--dk-red));color:var(--gold);font-family:var(--font-display);font-size:1rem;letter-spacing:3px;cursor:pointer;margin:8px 0;box-shadow:0 4px 16px rgba(220,20,60,.3);display:none;font-weight:900;text-transform:uppercase}
+.actbtn:active{transform:scale(.96)}
+.cbox{position:relative;width:min(75vw,300px);height:min(75vw,300px)}
+.bzl{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,#2a1f14,#3d2e1f,#5a4530,#3d2e1f,#2a1f14);box-shadow:0 0 0 3px rgba(218,165,32,.4),0 0 30px rgba(0,0,0,.5),inset 0 0 24px rgba(0,0,0,.3);will-change:transform;transition:transform .1s ease-out}
+.cface{position:absolute;inset:7px;border-radius:50%;background:radial-gradient(circle at 38% 33%,#FFF8E1,#F5E6C8 40%,#E8D5A8 80%,#D4C090);box-shadow:inset 0 2px 6px rgba(0,0,0,.1);overflow:hidden}
+.cface svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.clet{position:absolute;font-family:var(--font-display);font-weight:900;transform:translate(-50%,-50%);pointer-events:none}
+.clet.n{top:10%;left:50%;font-size:clamp(.9rem,3.4vw,1.3rem);color:var(--red)}
+.clet.s{top:90%;left:50%;font-size:clamp(.75rem,2.6vw,1rem);color:var(--ink)}
+.clet.e{top:50%;left:90%;font-size:clamp(.75rem,2.6vw,1rem);color:var(--ink)}
+.clet.w{top:50%;left:10%;font-size:clamp(.75rem,2.6vw,1rem);color:var(--ink)}
+.csub{position:absolute;font-family:var(--font-body);font-size:.5rem;font-weight:700;color:#999;transform:translate(-50%,-50%);pointer-events:none}
+.ndl{position:absolute;inset:0;z-index:10;pointer-events:none}
+.ndl svg{width:100%;height:100%;filter:drop-shadow(2px 3px 4px rgba(0,0,0,.3))}
+.ccap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;z-index:11;background:radial-gradient(circle at 35% 35%,#f0d080,#DAA520,#b8860b);box-shadow:0 2px 4px rgba(0,0,0,.35);border:1.5px solid #8B6914}
+.tbm{position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;transition:opacity .3s}
+.tbm svg{width:100%;height:100%}
+.hrd{margin-top:12px;text-align:center}
+.hdg{font-family:var(--font-mono);font-size:clamp(2rem,7vw,3.2rem);color:var(--gold);font-weight:700;line-height:1;text-shadow:0 0 16px rgba(218,165,32,.2)}
+.hdi{font-family:var(--font-display);font-size:clamp(.85rem,2.6vw,1.1rem);color:var(--red);letter-spacing:3px;margin-top:2px;font-weight:900;text-transform:uppercase}
+.tgt{margin-top:12px;width:100%;max-width:340px}
+.tgl{font-size:.55rem;color:rgba(255,215,0,.35);letter-spacing:2px;font-weight:700;text-transform:uppercase;text-align:center;margin-bottom:3px}
+.tgs{width:100%;padding:8px;border-radius:6px;border:2px solid rgba(218,165,32,.2);background:rgba(255,255,255,.04);color:var(--gold);font-family:var(--font-body);font-size:.78rem;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%23DAA520'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.tgs option{background:var(--bg);color:#eee}
+.tgi{text-align:center;margin-top:6px;font-family:var(--font-mono);font-size:.72rem;color:rgba(255,255,255,.5);min-height:18px}
+.tgi .ok{color:var(--fg);font-weight:700}
+.manual-sec{margin-top:12px;width:100%;max-width:340px;display:none}
+.manual-lab{font-size:.55rem;color:rgba(255,215,0,.3);letter-spacing:2px;font-weight:700;text-transform:uppercase;text-align:center;margin-bottom:3px}
+.manual-range{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:rgba(218,165,32,.15);outline:none;cursor:pointer}
+.manual-range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--gold);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.manual-range::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--gold);box-shadow:0 2px 6px rgba(0,0,0,.3);border:none}
+.dbg{margin-top:8px;font-family:var(--font-mono);font-size:.5rem;color:rgba(255,255,255,.15);text-align:center;max-width:340px;word-break:break-all}
+
+/* === MAP PANEL === */
+.rsec{background:var(--pm);padding:10px;display:flex;justify-content:center}
+.legend{background:var(--pd);padding:6px 10px;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;font-size:.6rem;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+.lgi{display:flex;align-items:center;gap:3px}
+.lgs{width:11px;height:11px;border-radius:3px;border:1px solid rgba(0,0,0,.1);flex-shrink:0}
+.mwrap{background:var(--pm);padding:8px}
+.map{position:relative;width:100%;padding-bottom:75%;background:linear-gradient(var(--pd),var(--pm));border:3px solid var(--ink);border-radius:4px;overflow:hidden;box-shadow:inset 0 0 35px rgba(44,24,16,.1)}
+.mgr{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(rgba(44,24,16,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(44,24,16,.06) 1px,transparent 1px);background-size:10% 10%}
+.wtr{position:absolute;border-radius:50%;background:radial-gradient(ellipse,rgba(26,107,138,.35),rgba(26,107,138,.12));border:1px solid rgba(26,107,138,.2)}
+.marsh{position:absolute;border-radius:45%;background:radial-gradient(ellipse,rgba(45,80,22,.3),rgba(45,80,22,.08));border:1px solid rgba(45,80,22,.15)}
+.mlb{position:absolute;font-size:.45rem;color:var(--blu);font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.5;z-index:3;pointer-events:none}
+.trl{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+.scbar{position:absolute;bottom:5px;left:5px;z-index:5}
+.scln{width:50px;height:3px;border:1px solid var(--ink);background:repeating-linear-gradient(90deg,var(--ink) 0,var(--ink) 25px,var(--pm) 25px,var(--pm) 50px)}
+.sctx{font-family:var(--font-mono);font-size:.4rem;color:var(--ink);font-weight:700;margin-top:1px}
+.mk{position:absolute;z-index:10;cursor:pointer;transform:translate(-50%,-50%);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.mk:hover{transform:translate(-50%,-50%) scale(1.25);z-index:20}
+.mp{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:2px 2px 4px rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.3)}
+.mi{transform:rotate(45deg);font-size:11px;line-height:1}
+.mn{position:absolute;top:-4px;right:-4px;width:14px;height:14px;background:var(--red);color:#fff;border-radius:50%;font-size:.45rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;font-family:var(--font-mono)}
+.mk.fd .mp{background:var(--fg)!important;box-shadow:0 0 8px rgba(40,167,69,.4)}
+.mk.fd .mn{background:var(--fg)}
+/* Road labels on map */
+.road-label{position:absolute;font-family:var(--font-mono);font-size:.4rem;color:rgba(44,24,16,.35);font-weight:700;letter-spacing:2px;text-transform:uppercase;z-index:4;pointer-events:none}
+
+/* === WAYPOINTS PANEL === */
+.wsec{background:linear-gradient(180deg,var(--bg),#0f3460);padding:10px}
+.stit{font-family:var(--font-display);font-size:1.2rem;color:var(--gold);text-align:center;letter-spacing:3px;margin-bottom:8px;text-shadow:2px 2px 0 rgba(0,0,0,.5);font-weight:900;text-transform:uppercase}
+.wgr{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;max-width:850px;margin:0 auto}
+.wc{background:var(--pm);border-radius:6px;padding:9px;border-left:5px solid var(--org);box-shadow:0 2px 7px rgba(0,0,0,.2);position:relative;transition:transform .2s}
+.wc:hover{transform:translateY(-2px)}
+.wc.fd{border-left-color:var(--fg)}
+.wc .fb{display:none;position:absolute;top:4px;right:4px;background:var(--fg);color:#fff;font-size:.5rem;font-weight:700;padding:2px 6px;border-radius:9px;font-family:var(--font-mono);letter-spacing:1px}
+.wc.fd .fb{display:block}
+.wh{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.wn{width:22px;height:22px;background:var(--red);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:.65rem;flex-shrink:0}
+.wnm{font-family:var(--font-display);font-size:.8rem;color:var(--ink);letter-spacing:.5px;font-weight:900;text-transform:uppercase}
+.wsu{font-size:.6rem;color:#666}
+.wcr{font-family:var(--font-mono);font-size:.55rem;color:var(--grn);background:rgba(45,80,22,.06);padding:2px 4px;border-radius:3px;display:inline-block;margin-bottom:3px}
+.wd{display:grid;grid-template-columns:1fr 1fr;gap:2px 7px;font-size:.65rem;margin-bottom:3px}
+.wdl{font-weight:700;color:var(--red);font-size:.5rem;text-transform:uppercase;letter-spacing:1px}
+.wcl{background:rgba(218,165,32,.1);border:1px dashed var(--gold);border-radius:4px;padding:4px 6px;font-size:.65rem;font-style:italic;margin-bottom:3px}
+.wt{background:rgba(45,80,22,.06);border-radius:4px;padding:4px 6px;font-size:.65rem;margin-bottom:4px}
+.wb{width:100%;padding:5px;border:none;border-radius:4px;background:var(--red);color:#fff;font-family:var(--font-display);font-size:.72rem;letter-spacing:2px;cursor:pointer;text-transform:uppercase;transition:background .2s;font-weight:900}
+.wb:hover{background:#B01030}.wc.fd .wb{background:var(--fg)}
+
+/* Fun fact between waypoints */
+.wfun{background:rgba(26,107,138,.08);border:1px solid rgba(26,107,138,.15);border-radius:4px;padding:4px 6px;font-size:.6rem;margin-bottom:3px;color:var(--blu)}
+.wfun strong{color:var(--org)}
+.wjoke{background:rgba(218,165,32,.08);border:1px solid rgba(218,165,32,.15);border-radius:4px;padding:4px 6px;font-size:.6rem;margin-bottom:3px;color:#8B6914}
+
+/* === WALK LOG === */
+.log-sec{background:linear-gradient(180deg,var(--bg),#0f3460);padding:12px}
+.log-entry{background:var(--pm);border-radius:8px;padding:10px;margin-bottom:8px;max-width:700px;margin-left:auto;margin-right:auto;border-left:4px solid var(--org);position:relative}
+.log-entry.checked{border-left-color:var(--fg);opacity:.85}
+.log-entry .le-wp{font-family:var(--font-display);font-size:.85rem;color:var(--red);letter-spacing:1px;font-weight:900;text-transform:uppercase;margin-bottom:3px}
+.log-entry .le-walk{font-size:.7rem;color:#555;margin-bottom:4px;line-height:1.4}
+.log-entry .le-fact{background:rgba(26,107,138,.06);border-radius:4px;padding:5px 7px;font-size:.68rem;margin-bottom:4px;color:var(--blu);line-height:1.4}
+.log-entry .le-joke{background:rgba(218,165,32,.06);border-radius:4px;padding:5px 7px;font-size:.68rem;margin-bottom:4px;color:#8B6914;line-height:1.4}
+.log-entry .le-task{background:rgba(45,80,22,.06);border-radius:4px;padding:5px 7px;font-size:.68rem;margin-bottom:4px;color:var(--grn);line-height:1.4}
+.log-entry .le-input{width:100%;padding:6px;border:1px dashed rgba(44,24,16,.2);border-radius:4px;font-family:var(--font-body);font-size:.72rem;background:rgba(255,255,255,.5);margin-bottom:4px;resize:vertical;min-height:40px}
+.log-entry .le-check{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.7rem;font-weight:700;color:var(--grn)}
+.log-entry .le-check input{width:16px;height:16px;accent-color:var(--fg)}
+
+/* === LEARN PANEL === */
+.lsec{background:var(--pd);padding:12px}
+.lcard{max-width:700px;margin:0 auto;background:#fff;border-radius:8px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);border:2px solid var(--grn)}
+.ltit{font-family:var(--font-display);font-size:1rem;color:var(--grn);letter-spacing:2px;margin-bottom:7px;font-weight:900;text-transform:uppercase}
+.ls{display:flex;gap:8px;padding:5px 0;border-bottom:1px dashed rgba(44,24,16,.08)}
+.ls:last-child{border-bottom:none}
+.lnm{width:22px;height:22px;background:var(--grn);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem;flex-shrink:0}
+.ltx{font-size:.72rem;line-height:1.4}.ltx strong{color:var(--red)}
+.tsec{background:linear-gradient(135deg,#f0e6d0,#e8d5a8);padding:10px;border-top:3px solid var(--tan)}
+.tgr{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:5px;max-width:700px;margin:6px auto 0}
+.tit2{background:#fff;border-radius:5px;padding:5px;text-align:center;border:1px solid var(--tan)}
+.tic{font-size:1rem;margin-bottom:1px}.tnm{font-weight:700;font-size:.65rem}.tds{font-size:.5rem;color:#666;margin-top:1px}
+
+/* Quick ref card */
+.qref{max-width:700px;margin:10px auto;background:#fff;border-radius:8px;padding:12px;border:2px solid var(--red)}
+.qref-title{font-family:var(--font-display);font-size:.9rem;color:var(--red);letter-spacing:2px;margin-bottom:6px;font-weight:900;text-transform:uppercase}
+.qref-item{font-size:.7rem;line-height:1.5;padding:2px 0;border-bottom:1px dotted rgba(0,0,0,.06)}
+.qref-item strong{color:var(--ink)}
+.qref-item code{background:rgba(220,20,60,.06);padding:1px 4px;border-radius:2px;font-family:var(--font-mono);font-size:.65rem;color:var(--red)}
+
+/* === LEADER SOP PANEL === */
+.sop-sec{background:linear-gradient(180deg,var(--bg),#0f3460);padding:12px}
+.sop-card{max-width:750px;margin:0 auto 10px;background:var(--pm);border-radius:8px;padding:12px;border-left:5px solid var(--red)}
+.sop-h{font-family:var(--font-display);font-size:.95rem;color:var(--red);letter-spacing:2px;margin-bottom:6px;font-weight:900;text-transform:uppercase}
+.sop-txt{font-size:.72rem;line-height:1.5;color:var(--ink)}
+.sop-txt strong{color:var(--red)}
+.sop-list{margin:4px 0 4px 16px;font-size:.7rem;line-height:1.5}
+.sop-list li{margin-bottom:2px}
+.sop-table{width:100%;border-collapse:collapse;font-size:.62rem;margin:6px 0}
+.sop-table th{background:var(--red);color:#fff;padding:4px 6px;text-align:left;font-family:var(--font-display);letter-spacing:1px;font-weight:900;text-transform:uppercase}
+.sop-table td{padding:4px 6px;border-bottom:1px solid rgba(44,24,16,.1)}
+.sop-table tr:nth-child(even){background:rgba(0,0,0,.03)}
+.sop-warn{background:rgba(220,20,60,.08);border:2px solid var(--red);border-radius:6px;padding:8px;margin:6px 0;font-size:.7rem;color:var(--red);font-weight:700}
+
+/* === SCORING PANEL === */
+.score-sec{background:linear-gradient(180deg,var(--bg),#0f3460);padding:12px}
+.score-card{max-width:700px;margin:0 auto 8px;background:var(--pm);border-radius:8px;padding:10px}
+.score-team{display:grid;grid-template-columns:100px 1fr 60px;gap:6px;align-items:center;padding:6px;border-bottom:1px solid rgba(44,24,16,.1);font-size:.72rem}
+.score-team:last-child{border-bottom:none}
+.st-name{font-family:var(--font-display);color:var(--red);font-weight:900;text-transform:uppercase;letter-spacing:1px}
+.st-input{width:100%;padding:4px;border:1px solid rgba(44,24,16,.15);border-radius:3px;font-family:var(--font-mono);font-size:.7rem;text-align:center}
+.st-total{font-family:var(--font-mono);font-weight:700;color:var(--fg);font-size:.85rem;text-align:center}
+.score-cat{font-size:.6rem;color:rgba(255,215,0,.5);text-align:center;margin-bottom:3px;font-weight:700;letter-spacing:1px}
+
+/* === EQUIPMENT PANEL === */
+.eq-sec{background:var(--pd);padding:12px}
+.eq-card{max-width:700px;margin:0 auto;background:#fff;border-radius:8px;padding:10px;border:2px solid var(--org)}
+.eq-row{display:grid;grid-template-columns:auto 1fr 50px 50px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px dotted rgba(0,0,0,.08);font-size:.7rem}
+.eq-row:last-child{border-bottom:none}
+.eq-chk{width:16px;height:16px;accent-color:var(--fg)}
+.eq-qty{text-align:center;font-family:var(--font-mono);font-weight:700;font-size:.65rem}
+
+/* Footer */
+.ftr{background:var(--ink);padding:8px;text-align:center;color:rgba(255,215,0,.3);font-size:.55rem;line-height:1.5}
+.rrow{text-align:center;padding:6px;background:linear-gradient(180deg,#0f3460,var(--bg))}
+.rbtn{padding:4px 14px;border:1px solid rgba(220,20,60,.3);border-radius:4px;background:rgba(220,20,60,.1);color:rgba(220,20,60,.6);font-family:var(--font-mono);font-size:.6rem;letter-spacing:1px;cursor:pointer;margin:0 3px}
+.rbtn:hover{background:rgba(220,20,60,.2);color:var(--red)}
+
+/* Logout bar */
+.logout-bar{text-align:right;padding:4px 8px;background:rgba(0,0,0,.2)}
+.logout-btn{background:none;border:1px solid rgba(255,215,0,.2);color:rgba(255,215,0,.4);font-size:.55rem;padding:2px 8px;border-radius:3px;cursor:pointer;font-family:var(--font-mono);letter-spacing:1px}
+.logout-btn:hover{color:var(--gold);border-color:var(--gold)}
+.user-badge{color:rgba(255,215,0,.3);font-size:.55rem;font-family:var(--font-mono);margin-right:8px}
+
+/* Print styles */
+@media print{
+*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}body{background:#fff!important}
+.tabs,.cpnl,.actbtn,.rrow,.manual-sec,.dbg,.logout-bar,#loginScreen{display:none!important}.pnl{display:block!important}
+.hdr{padding:6px}.scb{background:#f0f0f0!important}.scl{color:#333!important}.scv{color:var(--ink)!important}
+.wsec{background:#fff!important}.stit{color:var(--ink)!important;text-shadow:none!important}
+.wc{box-shadow:none;border:1px solid #ccc;break-inside:avoid}.wb,.fb{display:none!important}
+.lcard{box-shadow:none}.ftr{background:#f5f5f5!important;color:#666!important}
+.wsec{break-before:page}.lsec{break-before:page}.sop-sec{break-before:page}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== LOGIN SCREEN ==================== -->
+<div id="loginScreen">
+<div class="login-wolf">🐺</div>
+<div class="login-logo">Wolfpack 101</div>
+<div class="login-sub">Scout Compass Adventure</div>
+<div class="login-box">
+<label>Scout or Leader Name</label>
+<input type="text" id="loginName" placeholder="Your name" autocomplete="off">
+<label>Password</label>
+<input type="password" id="loginPass" placeholder="Enter password" autocomplete="off">
+<button class="login-btn" onclick="doLogin()">Enter the Pack</button>
+<div class="login-err" id="loginErr"></div>
+</div>
+<div class="login-hint">Leaders get extra tabs. Scouts see the adventure.</div>
+</div>
+
+<!-- ==================== MAIN APP ==================== -->
+<div id="app">
+<div class="logout-bar">
+<span class="user-badge" id="userBadge"></span>
+<button class="logout-btn" onclick="doLogout()">LOGOUT</button>
+</div>
+<nav class="tabs" id="tabBar">
+<button class="tb on" onclick="tab('c')" id="t0"><i>🧭</i>COMPASS</button>
+<button class="tb" onclick="tab('m')" id="t1"><i>🗺️</i>MAP</button>
+<button class="tb" onclick="tab('w')" id="t2"><i>📍</i>WAYPOINTS</button>
+<button class="tb" onclick="tab('lg')" id="t3"><i>📝</i>LOG</button>
+<button class="tb" onclick="tab('l')" id="t4"><i>📖</i>LEARN</button>
+<button class="tb leader-only" onclick="tab('sop')" id="t5"><i>📋</i>SOP</button>
+<button class="tb leader-only" onclick="tab('sc')" id="t6"><i>🏆</i>SCORE</button>
+<button class="tb leader-only" onclick="tab('eq')" id="t7"><i>📦</i>GEAR</button>
+</nav>
+
+<!-- ===== COMPASS PANEL ===== -->
+<div class="pnl on" id="pc">
+<div class="hdr"><h1>Scout Compass Adventure</h1><div class="sub">Operation: Desert Navigator — Riparian Preserve</div><div class="loc">2757 E Guadalupe Rd, Gilbert, AZ 85234 · Pack 101 · 45 Min</div></div>
+<div class="scb">
+<div class="sci"><div class="scl">Waypoints</div><div class="scv">10</div></div>
+<div class="sci"><div class="scl">Found</div><div class="scv g" id="fc">0</div></div>
+<div class="sci"><div class="scl">Distance</div><div class="scv">~0.8mi</div></div>
+<div class="sci"><div class="scl">Points</div><div class="scv g" id="ptsTot">0</div></div>
+</div>
+<div class="cpnl">
+<div class="cst w" id="cst">INITIALIZING COMPASS...</div>
+<button class="actbtn" id="ibtn" onclick="reqC()">🧭 ENABLE COMPASS</button>
+<button class="actbtn" id="retrybtn" onclick="retryC()">RETRY SENSOR</button>
+<div class="cbox">
+<div class="bzl" id="bzl">
+<div class="cface">
+<svg viewBox="0 0 200 200" id="tks"></svg>
+<div class="clet n">N</div><div class="clet s">S</div><div class="clet e">E</div><div class="clet w">W</div>
+<div class="csub" style="top:17%;left:81%">NE</div><div class="csub" style="top:17%;left:19%">NW</div>
+<div class="csub" style="top:83%;left:81%">SE</div><div class="csub" style="top:83%;left:19%">SW</div>
+<div class="csub" style="top:5%;left:50%;color:#aaa;font-size:.45rem">0°</div>
+<div class="csub" style="top:50%;left:95%;color:#aaa;font-size:.45rem">90°</div>
+<div class="csub" style="top:95%;left:50%;color:#aaa;font-size:.45rem">180°</div>
+<div class="csub" style="top:50%;left:5%;color:#aaa;font-size:.45rem">270°</div>
+</div>
+</div>
+<div class="ndl"><svg viewBox="0 0 200 200"><polygon points="100,16 107,90 100,80 93,90" fill="#DC143C" stroke="#8B0000" stroke-width=".5"/><polygon points="100,184 107,110 100,120 93,110" fill="#2C1810" stroke="#1a0f08" stroke-width=".5"/></svg></div>
+<div class="tbm" id="tbm"><svg viewBox="0 0 200 200" id="tbsvg"><line x1="100" y1="100" x2="100" y2="20" stroke="#DAA520" stroke-width="2.5" stroke-dasharray="6 3" opacity=".75"/><circle cx="100" cy="20" r="5" fill="#DAA520" opacity=".85"/></svg></div>
+<div class="ccap"></div>
+</div>
+<div class="hrd"><div class="hdg" id="hdg">---°</div><div class="hdi" id="hdi">AWAITING SIGNAL</div></div>
+<div class="tgt"><div class="tgl">Navigate to Waypoint</div><select class="tgs" id="tgs" onchange="uTgt()"><option value="">— Select Target Bearing —</option></select><div class="tgi" id="tgi"></div></div>
+<div class="manual-sec" id="mansec">
+<div class="manual-lab">MANUAL HEADING (no sensor — drag to simulate)</div>
+<input type="range" class="manual-range" id="manrng" min="0" max="359" value="0" oninput="manH(this.value)">
+</div>
+<div class="dbg" id="dbg"></div>
+</div>
+</div>
+
+<!-- ===== MAP PANEL ===== -->
+<div class="pnl" id="pm">
+<div class="rsec">
+<svg viewBox="0 0 200 200" style="width:130px;height:130px;filter:drop-shadow(2px 3px 5px rgba(0,0,0,.3))">
+<defs><radialGradient id="rg" cx="50%" cy="50%"><stop offset="0%" stop-color="#FFF8E1"/><stop offset="100%" stop-color="#E8D5A8"/></radialGradient></defs>
+<circle cx="100" cy="100" r="95" fill="url(#rg)" stroke="#2C1810" stroke-width="3"/>
+<polygon points="100,15 106,85 100,75 94,85" fill="#DC143C"/><polygon points="100,185 106,115 100,125 94,115" fill="#2C1810"/>
+<polygon points="15,100 85,94 75,100 85,106" fill="#2C1810"/><polygon points="185,100 115,94 125,100 115,106" fill="#2C1810"/>
+<circle cx="100" cy="100" r="5" fill="#DAA520" stroke="#2C1810" stroke-width="1"/>
+<text x="100" y="32" text-anchor="middle" fill="#DC143C" font-weight="900" font-size="18">N</text>
+<text x="100" y="178" text-anchor="middle" fill="#2C1810" font-weight="700" font-size="14">S</text>
+<text x="177" y="105" text-anchor="middle" fill="#2C1810" font-weight="700" font-size="14">E</text>
+<text x="23" y="105" text-anchor="middle" fill="#2C1810" font-weight="700" font-size="14">W</text>
+</svg>
+</div>
+<div class="legend">
+<div class="lgi"><div class="lgs" style="background:rgba(26,107,138,.5)"></div>Pond</div>
+<div class="lgi"><div class="lgs" style="background:rgba(45,80,22,.35)"></div>Marsh/Island</div>
+<div class="lgi"><div class="lgs" style="background:#2D5016"></div>Main Trail</div>
+<div class="lgi"><div class="lgs" style="background:#C4A265;border-style:dashed"></div>Side Trail</div>
+<div class="lgi"><div class="lgs" style="background:#E8751A"></div>Waypoint</div>
+<div class="lgi"><div class="lgs" style="background:#28A745"></div>Found!</div>
+<div class="lgi"><div class="lgs" style="background:#DC143C"></div>Start/Finish</div>
+</div>
+<div class="mwrap"><div class="map">
+<div class="mgr"></div>
+<!-- Road labels -->
+<div class="road-label" style="top:1%;left:35%">GUADALUPE ROAD (N)</div>
+<div class="road-label" style="bottom:1%;left:30%">SUN CIRCLE TRAIL (S)</div>
+<div class="road-label" style="top:40%;left:1%;writing-mode:vertical-lr">GREENFIELD RD (W)</div>
+<div class="road-label" style="top:35%;right:1%;writing-mode:vertical-lr">EASTERN CANAL (E)</div>
+<!-- Water Ranch Lake -->
+<div class="wtr" style="left:18%;top:18%;width:20%;height:24%;border-radius:55% 45% 50% 40%"></div>
+<div class="mlb" style="left:21%;top:14%">Water Ranch Lake</div>
+<!-- Pond 1 -->
+<div class="wtr" style="left:58%;top:12%;width:18%;height:20%;border-radius:45% 55% 50% 45%"></div>
+<div class="mlb" style="left:63%;top:9%">Pond #1</div>
+<!-- Pond 2 -->
+<div class="wtr" style="left:65%;top:38%;width:15%;height:18%;border-radius:50% 45% 55% 48%"></div>
+<div class="mlb" style="left:68%;top:35%">Pond #2</div>
+<!-- Pond 3 -->
+<div class="wtr" style="left:52%;top:55%;width:16%;height:16%;border-radius:48% 52% 45% 55%"></div>
+<div class="mlb" style="left:55%;top:52%">Pond #3</div>
+<!-- Pond 4 -->
+<div class="wtr" style="left:38%;top:68%;width:16%;height:18%;border-radius:50% 45% 52% 48%"></div>
+<div class="mlb" style="left:42%;top:66%">Pond #4</div>
+<!-- Pond 5 -->
+<div class="wtr" style="left:25%;top:52%;width:18%;height:16%;border-radius:45% 55% 48% 52%"></div>
+<div class="mlb" style="left:29%;top:49%">Pond #5</div>
+<!-- Pond 6 -->
+<div class="wtr" style="left:12%;top:48%;width:14%;height:16%;border-radius:50% 48% 52% 45%"></div>
+<div class="mlb" style="left:13%;top:45%">Pond #6</div>
+<!-- Pond 7 -->
+<div class="wtr" style="left:30%;top:34%;width:16%;height:15%;border-radius:48% 52% 50% 45%"></div>
+<div class="mlb" style="left:34%;top:31%">Pond #7</div>
+<!-- Marsh islands (green patches) -->
+<div class="marsh" style="left:62%;top:48%;width:6%;height:8%"></div>
+<div class="marsh" style="left:42%;top:74%;width:5%;height:7%"></div>
+<div class="marsh" style="left:22%;top:28%;width:5%;height:6%"></div>
+<div class="marsh" style="left:72%;top:20%;width:4%;height:5%"></div>
+<!-- Trails -->
+<svg class="trl" viewBox="0 0 400 300">
+<!-- Main loop trail -->
+<path d="M45,270 C55,240 65,200 85,175 S110,140 130,115 S165,85 195,75 S240,72 275,82 S320,105 340,135 S355,170 350,210 S330,250 300,265 S250,280 210,275 S150,265 100,268 Z" fill="none" stroke="#2D5016" stroke-width="2.5" opacity=".5"/>
+<!-- Side trails -->
+<path d="M85,175 L115,195 L150,168 L190,178" fill="none" stroke="#C4A265" stroke-width="2" stroke-dasharray="7 3" opacity=".55"/>
+<path d="M195,75 L215,110 L255,125" fill="none" stroke="#C4A265" stroke-width="2" stroke-dasharray="7 3" opacity=".55"/>
+<path d="M130,115 L155,65 L190,55" fill="none" stroke="#C4A265" stroke-width="2" stroke-dasharray="7 3" opacity=".55"/>
+<path d="M300,265 L330,225 L350,185" fill="none" stroke="#C4A265" stroke-width="2" stroke-dasharray="7 3" opacity=".55"/>
+<!-- Floating Boardwalk area -->
+<path d="M155,100 L175,95" fill="none" stroke="#8B6914" stroke-width="1.5" stroke-dasharray="3 2" opacity=".4"/>
+</svg>
+<!-- Scale & compass rose -->
+<div class="scbar"><div class="scln"></div><div class="sctx">0 —— 200ft</div></div>
+<svg viewBox="0 0 50 50" style="position:absolute;top:5px;right:5px;width:32px;height:32px;z-index:5"><circle cx="25" cy="25" r="22" fill="rgba(245,230,200,.9)" stroke="#2C1810" stroke-width="1.5"/><polygon points="25,6 27,21 25,19 23,21" fill="#DC143C"/><polygon points="25,44 27,29 25,31 23,29" fill="#2C1810"/><text x="25" y="14" text-anchor="middle" fill="#DC143C" font-weight="900" font-size="7">N</text></svg>
+<!-- Library marker -->
+<div style="position:absolute;left:8%;top:7%;font-size:.4rem;color:rgba(44,24,16,.4);font-weight:700;z-index:4">📚 SE Regional Library</div>
+<!-- Waypoint markers -->
+<div class="mk" id="m0" style="left:10%;top:88%" onclick="tog(0)"><div class="mp" style="background:#DC143C"><span class="mi">⭐</span></div><span class="mn">S</span></div>
+<div class="mk" id="m1" style="left:15%;top:70%" onclick="tog(1)"><div class="mp" style="background:#E8751A"><span class="mi">🌵</span></div><span class="mn">1</span></div>
+<div class="mk" id="m2" style="left:28%;top:44%" onclick="tog(2)"><div class="mp" style="background:#E8751A"><span class="mi">🦎</span></div><span class="mn">2</span></div>
+<div class="mk" id="m3" style="left:20%;top:22%" onclick="tog(3)"><div class="mp" style="background:#E8751A"><span class="mi">🐦</span></div><span class="mn">3</span></div>
+<div class="mk" id="m4" style="left:40%;top:13%" onclick="tog(4)"><div class="mp" style="background:#E8751A"><span class="mi">🪨</span></div><span class="mn">4</span></div>
+<div class="mk" id="m5" style="left:57%;top:26%" onclick="tog(5)"><div class="mp" style="background:#E8751A"><span class="mi">🌊</span></div><span class="mn">5</span></div>
+<div class="mk" id="m6" style="left:72%;top:38%" onclick="tog(6)"><div class="mp" style="background:#E8751A"><span class="mi">🦅</span></div><span class="mn">6</span></div>
+<div class="mk" id="m7" style="left:82%;top:52%" onclick="tog(7)"><div class="mp" style="background:#E8751A"><span class="mi">🏜️</span></div><span class="mn">7</span></div>
+<div class="mk" id="m8" style="left:72%;top:68%" onclick="tog(8)"><div class="mp" style="background:#E8751A"><span class="mi">🌿</span></div><span class="mn">8</span></div>
+<div class="mk" id="m9" style="left:48%;top:80%" onclick="tog(9)"><div class="mp" style="background:#E8751A"><span class="mi">🏁</span></div><span class="mn">9</span></div>
+<div class="mk" id="m10" style="left:60%;top:78%;display:none" onclick="tog(10)"><div class="mp" style="background:#DAA520"><span class="mi">🌟</span></div><span class="mn">B</span></div>
+</div></div>
+</div>
+
+<!-- ===== WAYPOINTS PANEL ===== -->
+<div class="pnl" id="pw">
+<div class="wsec"><div class="stit">Mission Waypoints</div><div class="wgr" id="wgr"></div></div>
+<div class="rrow"><button class="rbtn" onclick="rstAll()">RESET ALL WAYPOINTS</button></div>
+</div>
+
+<!-- ===== WALK LOG PANEL ===== -->
+<div class="pnl" id="plg">
+<div class="log-sec">
+<div class="stit">Adventure Walk Log</div>
+<div style="text-align:center;color:rgba(255,215,0,.4);font-size:.6rem;margin-bottom:10px;letter-spacing:1px">Interactive field log — jokes, facts, and notes between every waypoint!</div>
+<div id="logEntries"></div>
+<div class="rrow" style="margin-top:10px"><button class="rbtn" onclick="exportLog()">EXPORT LOG (COPY)</button></div>
+</div>
+</div>
+
+<!-- ===== LEARN PANEL ===== -->
+<div class="pnl" id="pl">
+<div class="lsec"><div class="lcard">
+<div class="ltit">How to Use Your Compass</div>
+<div class="ls"><div class="lnm">1</div><div class="ltx"><strong>Hold it flat</strong> at waist height. Needle floats — don't tilt!</div></div>
+<div class="ls"><div class="lnm">2</div><div class="ltx"><strong>Let the needle settle.</strong> RED end always points NORTH.</div></div>
+<div class="ls"><div class="lnm">3</div><div class="ltx"><strong>Rotate the bezel</strong> until "N" lines up with the RED needle.</div></div>
+<div class="ls"><div class="lnm">4</div><div class="ltx"><strong>Read your bearing:</strong> Direction-of-travel arrow meets bezel = heading (0°=N, 90°=E, 180°=S, 270°=W).</div></div>
+<div class="ls"><div class="lnm">5</div><div class="ltx"><strong>"Red in the Shed":</strong> Set target on bezel, rotate BODY until red needle sits in orienting arrow. Walk!</div></div>
+<div class="ls"><div class="lnm">6</div><div class="ltx"><strong>Pace counting:</strong> Each pair of steps = ~5 feet. Count "one" each time your LEFT foot hits ground. 20 paces = ~100 feet.</div></div>
+<div class="ls"><div class="lnm">7</div><div class="ltx"><strong>Back-bearing:</strong> Add 180° to your bearing. If result >360°, subtract 360°. Example: 65° + 180° = 245°.</div></div>
+</div></div>
+
+<div class="qref">
+<div class="qref-title">Compass Quick Reference</div>
+<div class="qref-item"><strong>Cardinal:</strong> <code>N=0°/360°</code> <code>E=90°</code> <code>S=180°</code> <code>W=270°</code></div>
+<div class="qref-item"><strong>Intercardinal:</strong> <code>NE=45°</code> <code>SE=135°</code> <code>SW=225°</code> <code>NW=315°</code></div>
+<div class="qref-item"><strong>Back-Bearing Formula:</strong> Your bearing + 180°. If >360°, subtract 360°.</div>
+<div class="qref-item"><strong>Magnetic Declination:</strong> Gilbert, AZ = ~10° East. Not critical for this course.</div>
+<div class="qref-item"><strong>Whistle Code:</strong> 1 blast = "Where are you?" | 2 blasts = "Come to me" | 3 blasts = EMERGENCY</div>
+<div class="qref-item"><strong>Lost Protocol:</strong> STOP → SIT → WHISTLE (3 blasts). Do NOT wander. Leader will find you.</div>
+</div>
+
+<div class="tsec"><div class="stit" style="color:var(--ink);text-shadow:none">Topographic Symbols</div>
+<div class="tgr">
+<div class="tit2"><div class="tic">〰️</div><div class="tnm">Contour Line</div><div class="tds">Closer = steeper</div></div>
+<div class="tit2"><div class="tic">💧</div><div class="tnm">Water Feature</div><div class="tds">Pond, basin, wetland</div></div>
+<div class="tit2"><div class="tic">🌳</div><div class="tnm">Vegetation</div><div class="tds">Trees, bushes, cover</div></div>
+<div class="tit2"><div class="tic">- - -</div><div class="tnm">Trail (Unpaved)</div><div class="tds">Dirt/gravel path</div></div>
+<div class="tit2"><div class="tic">━━</div><div class="tnm">Trail (Paved)</div><div class="tds">Concrete / asphalt</div></div>
+<div class="tit2"><div class="tic">▲</div><div class="tnm">Benchmark</div><div class="tds">Known elevation pt</div></div>
+</div></div>
+</div>
+
+<!-- ===== LEADER SOP PANEL ===== -->
+<div class="pnl" id="psop">
+<div class="sop-sec">
+<div class="stit">Leader Standard Operating Procedure</div>
+<div style="text-align:center;color:rgba(255,215,0,.4);font-size:.6rem;margin-bottom:10px;letter-spacing:1px">LEADER EYES ONLY — DO NOT DISTRIBUTE TO SCOUTS</div>
+
+<div class="sop-card">
+<div class="sop-h">1. Purpose & Objectives</div>
+<div class="sop-txt">This SOP establishes procedures for a 45-minute compass navigation adventure at the Riparian Preserve at Water Ranch. Scouts navigate a 10-waypoint course (~0.8 miles) learning compass bearings, GPS coordinate reading, pace counting, reciprocal bearings, and basic topographic interpretation.</div>
+</div>
+
+<div class="sop-card">
+<div class="sop-h">2. Event Info</div>
+<table class="sop-table">
+<tr><td><strong>Location</strong></td><td>Riparian Preserve at Water Ranch, 2757 E Guadalupe Rd, Gilbert, AZ 85234</td></tr>
+<tr><td><strong>Troop Size</strong></td><td>10 Scouts + Adult Leaders</td></tr>
+<tr><td><strong>Duration</strong></td><td>45 min course + 15 min setup + 10 min debrief</td></tr>
+<tr><td><strong>Distance</strong></td><td>~0.8 miles (tightened loop)</td></tr>
+<tr><td><strong>Difficulty</strong></td><td>Easy — Flat terrain, paved and unpaved trails</td></tr>
+<tr><td><strong>Emergency</strong></td><td>911 | Park Ranger: (480) 503-6263</td></tr>
+</table>
+</div>
+
+<div class="sop-card">
+<div class="sop-warn">CRITICAL: Buddy system mandatory. No scout navigates alone. Minimum 2 scouts per team.</div>
+<div class="sop-h">3. Safety Protocols</div>
+<ul class="sop-list">
+<li>Hydration check at midpoint (WP5) — leaders enforce water break</li>
+<li>Stay on marked trails — desert has hidden hazards (cactus, wildlife, holes)</li>
+<li>3-whistle-blast protocol: ALL scouts return immediately to nearest adult leader</li>
+<li>Wildlife: observe from distance only. DO NOT approach nesting birds</li>
+<li><strong>Heat protocol:</strong> If temp exceeds 95°F, shorten to waypoints 1-5 only</li>
+<li><strong>Lost scout:</strong> STOP, sit down, blow whistle, wait for leader</li>
+</ul>
+</div>
+
+<div class="sop-card">
+<div class="sop-h">4. Execution Timeline</div>
+<table class="sop-table">
+<tr><th>Time</th><th>Phase</th><th>Details</th></tr>
+<tr><td>T-30 min</td><td>Leader Setup</td><td>Pre-place colored markers at all 10 waypoints. Walk the course to verify. ~20 min.</td></tr>
+<tr><td>T-15 min</td><td>Arrival</td><td>Scouts arrive at Library Parking Lot. Verify equipment. Buddy assignments.</td></tr>
+<tr><td>T-10 min</td><td>Compass Crash Course</td><td>10-min hands-on: holding, reading, shooting a bearing, reciprocal.</td></tr>
+<tr><td>T-0</td><td>LAUNCH</td><td>Teams deploy from Rally Point. Stagger starts by 2 min per team.</td></tr>
+<tr><td>T+20</td><td>Midpoint Check</td><td>Leaders verify teams around WP4-5 area. Quick water break.</td></tr>
+<tr><td>T+40</td><td>Rally Call</td><td>3 whistles — all teams converge at Finish Line (WP9). Headcount.</td></tr>
+<tr><td>T+45</td><td>Debrief</td><td>Quick review of datasheets. Announce best navigation team.</td></tr>
+<tr><td>T+55</td><td>Cleanup</td><td>Retrieve all 10 waypoint markers. Leave no trace. Final headcount.</td></tr>
+</table>
+</div>
+
+<div class="sop-card">
+<div class="sop-h">5. Leader Talking Points (By Station)</div>
+<div class="sop-txt">
+<p><strong>Rally Point:</strong> Preserve built 1999, 110 acres, 7 ponds recharge groundwater, ~300 bird species, 4.5+ mi trails.<br>Ask: <em>"Why do birds travel hundreds of miles to come HERE to the AZ desert?"</em></p><br>
+<p><strong>WP1 Desert Sentinel:</strong> Chapter 46 Gilbert Code governs preserve. Leash law 6ft. No glass/alcohol. No feeding wildlife.<br>Ask: <em>"Why do parks have rules? What happens if everyone fed the ducks?"</em></p><br>
+<p><strong>WP3 Bird Blind:</strong> Important Bird Area (IBA) — Audubon Society. Peak 1,100+ shorebirds. Burrowing Owls nest in installed burrows.<br>Ask: <em>"Why do birds need WATER in the desert?"</em></p><br>
+<p><strong>WP5 Water's Edge:</strong> Back-bearing = bearing + 180°. If >360, subtract 360. Critical for retracing steps.<br>Ask: <em>"If you're lost, how could a back-bearing save you?"</em></p><br>
+<p><strong>WP6 Hawk's Perch:</strong> Triangulation: take 2 bearings to known landmarks, draw lines on map, intersection = your position.<br>Ask: <em>"What's the difference between TRUE north and MAGNETIC north?"</em></p><br>
+<p><strong>WP7 Desert Wash:</strong> Water Ranch Lake: AZ license required (kids 9 and under exempt). Barbless hooks. 2 trout/2 catfish daily.<br>Ask: <em>"Why barbless hooks?"</em> (Easier release, less injury, conservation)</p><br>
+<p><strong>Bonus Station:</strong> Hidden at 225° / 200ft from WP8. Tests follow-a-bearing skill. Worth 30 pts — biggest single score.<br>Ask: <em>"Why is precision so important in navigation?"</em></p>
+</div>
+</div>
+
+<div class="sop-card">
+<div class="sop-h">6. Emergency Contacts</div>
+<table class="sop-table">
+<tr><td><strong>911</strong></td><td>All emergencies</td></tr>
+<tr><td><strong>Gilbert Fire (non-emergency)</strong></td><td>(480) 503-6300</td></tr>
+<tr><td><strong>Park Ranger</strong></td><td>(480) 503-6263</td></tr>
+<tr><td><strong>Banner Gateway Medical</strong></td><td>1900 N Higley Rd, Gilbert — (480) 543-2000</td></tr>
+<tr><td><strong>Pack Contact</strong></td><td>scoutpack101gilbert@gmail.com · 602-349-2479</td></tr>
+</table>
+</div>
+</div>
+</div>
+
+<!-- ===== SCORING PANEL ===== -->
+<div class="pnl" id="psc">
+<div class="score-sec">
+<div class="stit">Team Scoreboard</div>
+<div class="score-card">
+<div class="score-cat">SCORING: Waypoint Found (10pts) · Task Done (5pts) · Reciprocal (15pts) · GPS Accuracy (5pts) · Buddy System (20pts) · Finish Together (15pts) · MAX: 240 pts</div>
+<div id="scoreRows"></div>
+</div>
+<div class="score-card" style="margin-top:8px">
+<div class="stit" style="color:var(--ink);text-shadow:none;font-size:.9rem">Awards</div>
+<div style="font-size:.72rem;line-height:1.8;padding:4px">
+<div>🥇 <strong>Overall Champion</strong> — Highest total score</div>
+<div>⚡ <strong>Speed Navigator</strong> — Fastest completion time</div>
+<div>📋 <strong>Best Field Log</strong> — Neatest/most thorough documentation</div>
+<div>🤝 <strong>True North Spirit</strong> — Best teamwork and attitude</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ===== EQUIPMENT PANEL ===== -->
+<div class="pnl" id="peq">
+<div class="eq-sec">
+<div class="stit" style="color:var(--ink);text-shadow:none">Equipment Checklist</div>
+<div class="eq-card" id="eqList"></div>
+</div>
+</div>
+
+<div class="ftr">WOLFPACK 101 — SCOUT COMPASS ADVENTURE | Riparian Preserve at Water Ranch, Gilbert, AZ<br>Pack 101 · wolfpack101.com · scoutpack101gilbert@gmail.com · 602-349-2479<br>"True North: People Helping People"</div>
+</div>
+
+<script>
+/* ============================================================
+   WOLFPACK 101 — SCOUT COMPASS ADVENTURE
+   Single-file offline HTML · Pack 101, Gilbert AZ
+   ============================================================ */
+
+// === AUTH ===
+var USERS={
+  'scout':'wolfpack',
+  'leader':'trueNorth101',
+  'wayne':'pack101admin'
+};
+var LEADER_USERS=['leader','wayne'];
+var curUser=null,isLeader=false;
+
+function doLogin(){
+  var name=document.getElementById('loginName').value.trim().toLowerCase();
+  var pass=document.getElementById('loginPass').value;
+  var err=document.getElementById('loginErr');
+  if(!name||!pass){err.textContent='Enter name and password';return}
+  // Check known users first
+  if(USERS[name]&&USERS[name]===pass){
+    curUser=name;isLeader=LEADER_USERS.indexOf(name)>=0;
+  }
+  // Also allow any name with scout password
+  else if(pass==='wolfpack'){curUser=name;isLeader=false}
+  else if(pass==='trueNorth101'||pass==='pack101admin'){curUser=name;isLeader=true}
+  else{err.textContent='Wrong password. Ask your leader!';return}
+  try{localStorage.setItem('wp101_user',curUser);localStorage.setItem('wp101_leader',isLeader?'1':'0')}catch(e){}
+  showApp();
+}
+function doLogout(){
+  try{localStorage.removeItem('wp101_user');localStorage.removeItem('wp101_leader')}catch(e){}
+  curUser=null;isLeader=false;
+  document.getElementById('app').className='';
+  document.getElementById('loginScreen').className='';
+  document.getElementById('loginName').value='';document.getElementById('loginPass').value='';
+}
+function showApp(){
+  document.getElementById('loginScreen').className='hidden';
+  document.getElementById('app').className='on';
+  document.getElementById('userBadge').textContent=(isLeader?'🔑 LEADER: ':'🐺 SCOUT: ')+curUser.toUpperCase();
+  var lTabs=document.querySelectorAll('.tb.leader-only');
+  for(var i=0;i<lTabs.length;i++)lTabs[i].style.display=isLeader?'block':'none';
+  // Show bonus marker for leaders
+  var bm=document.getElementById('m10');if(bm)bm.style.display=isLeader?'block':'none';
+}
+// Auto-login from localStorage
+(function(){
+  try{
+    var u=localStorage.getItem('wp101_user'),l=localStorage.getItem('wp101_leader');
+    if(u){curUser=u;isLeader=l==='1';showApp()}
+  }catch(e){}
+})();
+
+// === WAYPOINT DATA ===
+var W=[
+{id:0,n:"S",nm:"RALLY POINT",sub:"Library Parking Lot",lat:"33.3644° N",lon:"111.7347° W",br:"— START —",bd:null,dist:"START",skill:"Orientation",pts:0,
+ clue:"Gather at the main parking lot by the SE Regional Library. Face NORTH. Your adventure begins!",
+ task:"Orient your compass. Find North. Identify E, S, W. Buddy up!",
+ fact:"The Riparian Preserve was built in 1999 and covers 110 acres with 7 ponds that recharge groundwater. Over 300 bird species have been spotted here!",
+ joke:"Why did the compass break up with the map? Because it found someone with more direction! 🧭",
+ nextHint:"Your first bearing is 325° NW — look for the tallest cactus you can find!"},
+{id:1,n:"1",nm:"DESERT SENTINEL",sub:"Saguaro Junction",lat:"33.3640° N",lon:"111.7352° W",br:"325° (NW)",bd:325,dist:"~100 ft",skill:"Compass Basics",pts:10,
+ clue:"Aim compass to 325° NW from Rally Point. Find the tallest cactus near the first trail split.",
+ task:"Quick sketch the saguaro. Count its arms. Go!",
+ fact:"Saguaro cacti can live over 200 years and don't grow their first arm until they're about 75 years old. That big one you're looking at? Probably older than your grandparents!",
+ joke:"What did the cactus say to the scout? 'Stick with me and you'll go places!' 🌵",
+ nextHint:"Next up: 30° NNE to the Basin Overlook. Keep your eyes peeled for lizards!"},
+{id:2,n:"2",nm:"LIZARD LOOKOUT",sub:"Basin Overlook",lat:"33.3647° N",lon:"111.7344° W",br:"30° (NNE)",bd:30,dist:"~150 ft",skill:"GPS Coordinates",pts:15,
+ clue:"Head 30° NNE from WP1. Follow trail until first water basin on your LEFT.",
+ task:"Record GPS coords from your card. Scan for lizards!",
+ fact:"Gilbert's Riparian Preserve is home to the Western Whiptail Lizard — they can run up to 15 mph! That's faster than most scouts after lunch.",
+ joke:"What's a lizard's favorite subject in school? Hisss-tory! 🦎",
+ nextHint:"Bearing 350° almost due North to the Bird Blind. Time to be SILENT..."},
+{id:3,n:"3",nm:"BIRD BLIND",sub:"North Observation Point",lat:"33.3652° N",lon:"111.7348° W",br:"350° (N)",bd:350,dist:"~120 ft",skill:"Observation",pts:15,
+ clue:"Bearing 350° almost due North. Covered observation area near water's edge.",
+ task:"60-second silent count — how many bird species can you spot?",
+ fact:"This is an Important Bird Area (IBA) recognized by the Audubon Society. At peak times, over 1,100 shorebirds gather here. Burrowing Owls nest in specially installed underground burrows!",
+ joke:"What do you call a bird that's afraid of heights? A chicken! 🐔 (Don't tell the hawks...)",
+ nextHint:"65° ENE to Boulder Ridge — longest leg so far at 180 ft. Practice your bearing!"},
+{id:4,n:"4",nm:"BOULDER RIDGE",sub:"Trail Intersection",lat:"33.3655° N",lon:"111.7340° W",br:"65° (ENE)",bd:65,dist:"~180 ft",skill:"Bearing Practice",pts:20,
+ clue:"Take bearing 65° ENE past Basin 1. Large rock formation where trails cross.",
+ task:"Shoot a bearing to the NEXT waypoint. Record it. How close to 130° did you get?",
+ fact:"Ancient Native Americans used landmarks just like these rock formations to navigate the Sonoran Desert for thousands of years — no compass needed!",
+ joke:"What did one rock say to the other? 'Don't take me for granite!' 🪨",
+ nextHint:"130° SE to the water — and time to test your BACK-BEARING skills!"},
+{id:5,n:"5",nm:"WATER'S EDGE",sub:"Basin 2 Dock",lat:"33.3650° N",lon:"111.7335° W",br:"130° (SE)",bd:130,dist:"~150 ft",skill:"Back-Bearing",pts:20,
+ clue:"Head 130° SE. Find the viewing platform or dock area.",
+ task:"Measure bearing BACK to WP4. Should be 310° (reciprocal). How close are you?",
+ fact:"MANDATORY WATER BREAK! Speaking of water — the 7 ponds here are actually designed to recharge Gilbert's underground aquifer. The water you drink at home might have started right here!",
+ joke:"Why don't scientists trust atoms near water? Because they make up everything! 💧",
+ nextHint:"110° ESE along the east side. You're more than halfway — keep that energy up!"},
+{id:6,n:"6",nm:"HAWK'S PERCH",sub:"East Ridge Trail",lat:"33.3645° N",lon:"111.7328° W",br:"110° (ESE)",bd:110,dist:"~150 ft",skill:"Triangulation",pts:25,
+ clue:"Compass bearing 110° ESE. Take east side trail near the Eastern Canal.",
+ task:"Take bearing to 2 visible landmarks. Draw both lines on your map — where they cross is YOUR position!",
+ fact:"Red-tailed Hawks can spot a mouse from 100 feet in the air. Their vision is 8x better than humans. If you had hawk eyes, you could read a newspaper from across a football field!",
+ joke:"Why did the hawk go to school? To improve his bird's-eye view of things! 🦅",
+ nextHint:"155° SSE toward the southeast boundary. Look for where water carved the desert..."},
+{id:7,n:"7",nm:"DESERT WASH",sub:"Southeast Boundary",lat:"33.3638° N",lon:"111.7322° W",br:"155° (SSE)",bd:155,dist:"~180 ft",skill:"Terrain Sketch",pts:25,
+ clue:"Follow 155° SSE along preserve boundary. Find the dry wash area.",
+ task:"Quick sketch: how does water shape this desert terrain? Draw what you see!",
+ fact:"Desert washes (called 'arroyos') can go from bone dry to raging flash floods in minutes during monsoon season. NEVER camp in a dry wash — it's the desert's highway for water!",
+ joke:"Why did the desert wash cross the road? It didn't — it just went with the flow! 🏜️",
+ nextHint:"235° SW to Mesquite Camp — start counting your paces!"},
+{id:8,n:"8",nm:"MESQUITE CAMP",sub:"South Trail Bend",lat:"33.3635° N",lon:"111.7332° W",br:"235° (SW)",bd:235,dist:"~150 ft",skill:"Pace Count",pts:0,
+ clue:"Turn to 235° SW. Mesquite tree cluster near south trail bend.",
+ task:"Pace count to nearest water basin edge. Remember: 1 pair of steps = ~5 feet. Record your distance!",
+ fact:"Mesquite trees have roots that can reach over 150 feet deep — that's as tall as a 15-story building! They're the ultimate survivors of the Sonoran Desert.",
+ joke:"Why did the mesquite tree win the award? Because it was outstanding in its field... for 150 years! 🌿",
+ nextHint:"Last leg! 280° WNW to the South Ramada. FINISH STRONG!"},
+{id:9,n:"9",nm:"FINISH LINE",sub:"South Ramada",lat:"33.3637° N",lon:"111.7343° W",br:"280° (WNW)",bd:280,dist:"~160 ft",skill:"Final Rally",pts:0,
+ clue:"Final leg! 280° WNW to covered ramada/picnic area.",
+ task:"MISSION COMPLETE! Take a final bearing back to Rally Point. Regroup with your team!",
+ fact:"You just navigated ~0.8 miles using only a compass and your brain. Early explorers like Lewis & Clark used the same basic tools to cross an entire continent!",
+ joke:"Congratulations! You've officially navigated better than my GPS in a parking garage! 🏁",
+ nextHint:"BONUS CHALLENGE: Leaders may reveal a secret 10th station worth 30 points..."},
+{id:10,n:"B",nm:"BONUS — HIDDEN RAMADA",sub:"Secret Location!",lat:"—",lon:"—",br:"225° (SW from WP8)",bd:225,dist:"~200 ft",skill:"Follow Bearing",pts:30,
+ clue:"From WP8: set bearing to exactly 225°. Walk exactly 200 feet. WHAT DO YOU FIND?",
+ task:"This is the ultimate test — pure bearing + pace count. 200 ft at 225°. No other clues!",
+ fact:"In the military, following a precise bearing over unknown terrain is called 'dead reckoning.' Get it right and you find your objective. Get it wrong and... well, that's why we practice!",
+ joke:"Why is the bonus station hidden? Because even Google Maps doesn't know about this one! 🌟",
+ nextHint:"You found it! Head back to the South Ramada for your victory lap!"}
+];
+
+var F,SK='wolfpack101_v5';
+function initF(){F=new Array(W.length);for(var i=0;i<W.length;i++)F[i]=0}
+function ldF(){try{var s=localStorage.getItem(SK);if(s){var p=JSON.parse(s);F=new Array(W.length);for(var i=0;i<W.length;i++)F[i]=p[i]||0}else initF()}catch(e){initF()}}
+function svF(){try{localStorage.setItem(SK,JSON.stringify(F))}catch(e){}}
+ldF();
+
+// === TABS ===
+var TABS={c:'pc',m:'pm',w:'pw',lg:'plg',l:'pl',sop:'psop',sc:'psc',eq:'peq'};
+var TIDS=['t0','t1','t2','t3','t4','t5','t6','t7'];
+var TKEYS=['c','m','w','lg','l','sop','sc','eq'];
+function tab(t){
+  for(var i=0;i<TKEYS.length;i++){
+    var btn=document.getElementById(TIDS[i]);
+    var pnl=document.getElementById(TABS[TKEYS[i]]);
+    if(btn)btn.classList[TKEYS[i]===t?'add':'remove']('on');
+    if(pnl)pnl.classList[TKEYS[i]===t?'add':'remove']('on');
+  }
+}
+
+// === FOUND COUNT & POINTS ===
+function ufc(){
+  var c=0,pts=0;
+  for(var i=0;i<F.length;i++){if(F[i]){c++;pts+=W[i].pts}}
+  document.getElementById('fc').textContent=c;
+  document.getElementById('ptsTot').textContent=pts;
+}
+
+// === TOGGLE FOUND ===
+function tog(id){
+  F[id]=F[id]?0:1;
+  var m=document.getElementById('m'+id);
+  if(m){if(F[id])m.classList.add('fd');else m.classList.remove('fd')}
+  svF();ufc();rC();uLog();
+}
+function rstAll(){
+  if(!confirm('Reset ALL waypoints? This clears your progress!'))return;
+  initF();
+  for(var i=0;i<W.length;i++){var m=document.getElementById('m'+i);if(m)m.classList.remove('fd')}
+  svF();ufc();rC();uLog();
+}
+
+// === RENDER WAYPOINT CARDS ===
+function rC(){
+  var g=document.getElementById('wgr'),h='';
+  for(var i=0;i<W.length;i++){
+    var w=W[i],f=F[w.id];
+    // Hide bonus for non-leaders
+    if(w.id===10&&!isLeader)continue;
+    h+='<div class="wc'+(f?' fd':'')+'">'
+      +'<div class="fb">FOUND! +'+(w.pts||0)+' PTS</div>'
+      +'<div class="wh"><div class="wn">'+w.n+'</div><div><div class="wnm">'+w.nm+'</div><div class="wsu">'+w.sub+'</div></div></div>'
+      +'<div class="wcr">'+w.lat+' | '+w.lon+'</div>'
+      +'<div class="wd"><div><span class="wdl">Bearing</span><br>'+w.br+'</div><div><span class="wdl">Distance</span><br>'+w.dist+'</div></div>'
+      +'<div class="wfun"><strong>Fun Fact: </strong>'+w.fact+'</div>'
+      +'<div class="wjoke">'+w.joke+'</div>'
+      +'<div class="wcl"><strong style="font-style:normal">CLUE: </strong>'+w.clue+'</div>'
+      +'<div class="wt"><strong style="color:#2D5016">SCOUT TASK:</strong> '+w.task+'</div>'
+      +'<button class="wb" onclick="tog('+w.id+')">'+(f?'FOUND! ✓':'MARK AS FOUND')+'</button></div>';
+  }
+  g.innerHTML=h;
+}
+
+// === WALK LOG ===
+var LOG_KEY='wp101_log_v2';
+var logNotes={};
+function ldLog(){try{var s=localStorage.getItem(LOG_KEY);if(s)logNotes=JSON.parse(s)}catch(e){}}
+function svLog(){try{localStorage.setItem(LOG_KEY,JSON.stringify(logNotes))}catch(e){}}
+ldLog();
+
+function saveNote(id){
+  var el=document.getElementById('lognote_'+id);
+  if(el){logNotes[id]=el.value;svLog()}
+}
+function checkLog(id){
+  var el=document.getElementById('logchk_'+id);
+  if(el){logNotes['chk_'+id]=el.checked?1:0;svLog();uLog()}
+}
+
+function uLog(){
+  var c=document.getElementById('logEntries'),h='';
+  for(var i=0;i<W.length;i++){
+    var w=W[i];
+    if(w.id===10&&!isLeader)continue;
+    var chk=logNotes['chk_'+w.id]?true:false;
+    var note=logNotes[w.id]||'';
+    h+='<div class="log-entry'+(chk?' checked':'')+'">'
+      +'<div class="le-wp">'+(w.n==='S'?'START':'WP '+w.n)+': '+w.nm+' — '+w.sub+'</div>';
+    if(w.bd!==null)h+='<div class="le-walk">Walk <strong>'+w.br+'</strong> for <strong>'+w.dist+'</strong> | Skill: '+w.skill+(w.pts?' | '+w.pts+' pts':'')+'</div>';
+    h+='<div class="le-fact"><strong>Did You Know?</strong> '+w.fact+'</div>'
+      +'<div class="le-joke">'+w.joke+'</div>'
+      +'<div class="le-task"><strong>TASK:</strong> '+w.task+'</div>'
+      +'<textarea class="le-input" id="lognote_'+w.id+'" placeholder="Your notes, sketches, answers..." onblur="saveNote('+w.id+')">'+note+'</textarea>'
+      +'<label class="le-check"><input type="checkbox" id="logchk_'+w.id+'"'+(chk?' checked':'')+' onchange="checkLog('+w.id+')"> Station Complete</label>';
+    if(w.nextHint)h+='<div style="font-size:.6rem;color:var(--org);margin-top:4px;font-weight:700">NEXT: '+w.nextHint+'</div>';
+    h+='</div>';
+  }
+  c.innerHTML=h;
+}
+
+function exportLog(){
+  var txt='WOLFPACK 101 — SCOUT FIELD LOG\nScout: '+curUser+'\nDate: '+new Date().toLocaleDateString()+'\n\n';
+  for(var i=0;i<W.length;i++){
+    var w=W[i];
+    if(w.id===10&&!isLeader)continue;
+    var note=logNotes[w.id]||'(no notes)';
+    var chk=logNotes['chk_'+w.id]?'COMPLETE':'—';
+    txt+=(w.n==='S'?'START':'WP'+w.n)+': '+w.nm+' ['+chk+']\n';
+    txt+='  Notes: '+note+'\n\n';
+  }
+  // Copy to clipboard
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){alert('Log copied to clipboard!')}).catch(function(){prompt('Copy this:',txt)})}
+  else{prompt('Copy your log:',txt)}
+}
+
+// === MAP MARKERS INIT ===
+function rM(){for(var i=0;i<F.length;i++){var m=document.getElementById('m'+i);if(m&&F[i])m.classList.add('fd')}}
+
+// === SCORING ===
+var TEAMS=['Alpha','Bravo','Charlie','Delta','Echo'];
+var CATS=['WP Found\n(90)','Tasks\n(50)','Reciprocal\n(15)','GPS\n(50)','Buddy\n(20)','Together\n(15)'];
+var SCORE_KEY='wp101_scores';
+var scores={};
+function ldScores(){try{var s=localStorage.getItem(SCORE_KEY);if(s)scores=JSON.parse(s)}catch(e){}}
+function svScores(){try{localStorage.setItem(SCORE_KEY,JSON.stringify(scores))}catch(e){}}
+ldScores();
+
+function buildScoring(){
+  var c=document.getElementById('scoreRows'),h='';
+  h+='<div class="score-team" style="font-weight:700;font-size:.55rem;color:var(--red)">';
+  h+='<div>TEAM</div><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;text-align:center">';
+  var cats=['WP (90)','Tasks (50)','Recip (15)','GPS (50)','Buddy (20)','Finish (15)'];
+  for(var j=0;j<cats.length;j++)h+='<div>'+cats[j]+'</div>';
+  h+='</div><div style="text-align:center">TOTAL</div></div>';
+  for(var i=0;i<TEAMS.length;i++){
+    var t=TEAMS[i],tot=0;
+    h+='<div class="score-team"><div class="st-name">'+t+'</div><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px">';
+    for(var j=0;j<6;j++){
+      var k=t+'_'+j,v=scores[k]||'';
+      if(v)tot+=parseInt(v)||0;
+      h+='<input class="st-input" type="number" value="'+v+'" onchange="updScore(\''+k+'\',this.value)" min="0">';
+    }
+    h+='</div><div class="st-total" id="stot_'+t+'">'+tot+'</div></div>';
+  }
+  c.innerHTML=h;
+}
+function updScore(k,v){
+  scores[k]=v;svScores();
+  // Recalc totals
+  for(var i=0;i<TEAMS.length;i++){
+    var t=TEAMS[i],tot=0;
+    for(var j=0;j<6;j++){var val=scores[t+'_'+j];if(val)tot+=parseInt(val)||0}
+    var el=document.getElementById('stot_'+t);if(el)el.textContent=tot;
+  }
+}
+
+// === EQUIPMENT ===
+var EQUIP=[
+  ['Compasses (orienteering type)',10,'One per scout — test accuracy day before'],
+  ['Printed Field Logs (laminated)',10,'Cardstock recommended'],
+  ['Printed Topo Maps (color)',10,'11x17 if possible'],
+  ['Station Clue Cards (laminated)',8,'Waterproof sleeve or lamination'],
+  ['PVC Marker Stakes + Flagging Tape',8,'Orange tape + reflective strips'],
+  ['Zip Ties',20,'To attach clue cards to stakes'],
+  ['Pencils (with clips)',12,'Extra for breakage'],
+  ['Clipboards',10,'One per scout'],
+  ['Protractors',5,'One per team'],
+  ['Rulers (6" clear)',5,'For map scale work'],
+  ['Walkie-Talkies',3,'Charged night before · test range'],
+  ['GPS Device / Phone',2,'For waypoint verification'],
+  ['First Aid Kit',1,'Full kit · check expiry dates'],
+  ['Water (extra liters)',4,'2L per leader minimum'],
+  ['Sunscreen SPF 50',2,'Spray type'],
+  ['Whistle (emergency)',3,'One per leader'],
+  ['Completion Patches',10,'Order in advance'],
+  ['Camera / Phone',1,'Group photo at Ramada'],
+  ['Trash Bags',3,'Leave no trace'],
+  ['BONUS Marker (hidden)',1,'Place at 225°/200ft from Stn 8']
+];
+var EQ_KEY='wp101_equip';
+var eqChecks={};
+function ldEq(){try{var s=localStorage.getItem(EQ_KEY);if(s)eqChecks=JSON.parse(s)}catch(e){}}
+function svEq(){try{localStorage.setItem(EQ_KEY,JSON.stringify(eqChecks))}catch(e){}}
+ldEq();
+
+function buildEquip(){
+  var c=document.getElementById('eqList'),h='';
+  h+='<div class="eq-row" style="font-weight:700;font-size:.6rem;color:var(--red)"><div></div><div>ITEM</div><div style="text-align:center">QTY</div><div style="text-align:center">NOTES</div></div>';
+  for(var i=0;i<EQUIP.length;i++){
+    var e=EQUIP[i],chk=eqChecks[i]?'checked':'';
+    h+='<div class="eq-row"><input type="checkbox" class="eq-chk" '+chk+' onchange="eqChk('+i+',this.checked)"><div>'+e[0]+'</div><div class="eq-qty">'+e[1]+'</div><div style="font-size:.55rem;color:#888">'+e[2]+'</div></div>';
+  }
+  c.innerHTML=h;
+}
+function eqChk(i,v){eqChecks[i]=v?1:0;svEq()}
+
+// === COMPASS BEARING SELECTOR ===
+function bS(){
+  var s=document.getElementById('tgs');
+  for(var i=0;i<W.length;i++){
+    var w=W[i];
+    if(w.bd!==null){
+      var o=document.createElement('option');o.value=w.bd;
+      o.textContent='WP'+w.n+': '+w.nm+' ('+w.br+')';s.appendChild(o);
+    }
+  }
+}
+
+// === COMPASS TICK MARKS ===
+function bT(){
+  var svg=document.getElementById('tks'),cx=100,cy=100;
+  for(var d=0;d<360;d+=5){
+    var mj=d%30===0,r=d*Math.PI/180,oR=96,iR=mj?83:88;
+    var l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',cx+oR*Math.sin(r));l.setAttribute('y1',cy-oR*Math.cos(r));
+    l.setAttribute('x2',cx+iR*Math.sin(r));l.setAttribute('y2',cy-iR*Math.cos(r));
+    l.setAttribute('stroke','#2C1810');l.setAttribute('stroke-width',mj?'1.8':'.7');
+    l.setAttribute('opacity',mj?'.6':'.25');svg.appendChild(l);
+  }
+}
+
+// === LIVE COMPASS ENGINE ===
+var hd=null,tb=null,compOn=false,sm=null,LP=0.22,evtCount=0,lastRaw=null,dbgEl;
+
+function c16(d){return['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16]}
+function dbg(msg){if(dbgEl)dbgEl.textContent=msg}
+
+function setH(val){
+  hd=Math.round(val);
+  document.getElementById('bzl').style.transform='rotate('+(-hd)+'deg)';
+  document.getElementById('hdg').textContent=hd+'°';
+  document.getElementById('hdi').textContent=c16(hd);
+  uT();
+}
+
+function onO(e){
+  evtCount++;var h=null;
+  if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading)){
+    h=e.webkitCompassHeading;lastRaw='iOS:'+Math.round(h);
+  }else if(e.alpha!==null&&!isNaN(e.alpha)){
+    h=(360-e.alpha)%360;lastRaw=(e.absolute?'abs':'rel')+':a='+Math.round(e.alpha);
+  }
+  dbg('ev:'+evtCount+' '+lastRaw+' abs:'+e.absolute);
+  if(h===null||isNaN(h))return;
+  h=((h%360)+360)%360;
+  if(sm===null)sm=h;else{var df=h-sm;if(df>180)df-=360;if(df<-180)df+=360;sm=((sm+df*LP)%360+360)%360}
+  if(!compOn){compOn=true;var s=document.getElementById('cst');s.className='cst ok';s.textContent='COMPASS ACTIVE — LIVE HEADING';document.getElementById('mansec').style.display='none';document.getElementById('retrybtn').style.display='none'}
+  setH(sm);
+}
+
+function manH(val){sm=parseFloat(val);setH(sm);if(!compOn){document.getElementById('cst').className='cst w';document.getElementById('cst').textContent='MANUAL MODE — DRAG SLIDER'}}
+
+function uTgt(){
+  var v=document.getElementById('tgs').value,el=document.getElementById('tbm');
+  if(!v){tb=null;el.style.opacity='0';document.getElementById('tgi').innerHTML='';return}
+  tb=parseInt(v);el.style.opacity='1';uT();
+}
+function uT(){
+  if(tb===null)return;
+  if(hd!==null){
+    var sa=tb-hd;
+    document.getElementById('tbsvg').style.transform='rotate('+sa+'deg)';
+    var diff=tb-hd;if(diff>180)diff-=360;if(diff<-180)diff+=360;
+    var ad=Math.abs(diff),el=document.getElementById('tgi');
+    if(ad<=5)el.innerHTML='<span class="ok">ON TARGET — WALK FORWARD!</span>';
+    else if(diff>0)el.innerHTML='Turn RIGHT '+Math.round(ad)+'°';
+    else el.innerHTML='Turn LEFT '+Math.round(ad)+'°';
+  }else document.getElementById('tgi').innerHTML='Point compass to navigate';
+}
+
+function initC(){
+  dbgEl=document.getElementById('dbg');
+  if(typeof DeviceOrientationEvent==='undefined'){showFallback('No DeviceOrientation');return}
+  if(typeof DeviceOrientationEvent.requestPermission==='function'){
+    document.getElementById('ibtn').style.display='block';
+    document.getElementById('cst').className='cst w';
+    document.getElementById('cst').textContent='TAP "ENABLE COMPASS" TO START';
+    dbg('iOS detected');
+  }else{
+    dbg('Non-iOS: listening...');
+    document.getElementById('cst').textContent='LISTENING FOR SENSOR...';
+    window.addEventListener('deviceorientationabsolute',onO,true);
+    window.addEventListener('deviceorientation',onO,true);
+    setTimeout(function(){if(!compOn){
+      if(evtCount>0)showFallback('Sensor events ('+evtCount+') but no heading');
+      else showFallback('No sensor detected');
+    }},4000);
+  }
+}
+function showFallback(reason){
+  var s=document.getElementById('cst');s.className='cst no';s.textContent='NO LIVE COMPASS';
+  document.getElementById('mansec').style.display='block';document.getElementById('retrybtn').style.display='block';dbg(reason);
+}
+function reqC(){
+  DeviceOrientationEvent.requestPermission().then(function(r){
+    if(r==='granted'){window.addEventListener('deviceorientation',onO,true);document.getElementById('ibtn').style.display='none';document.getElementById('cst').className='cst w';document.getElementById('cst').textContent='ACQUIRING HEADING...';setTimeout(function(){if(!compOn)showFallback('No heading after permission')},4000)}
+    else{document.getElementById('cst').className='cst dn';document.getElementById('cst').textContent='COMPASS DENIED';document.getElementById('mansec').style.display='block'}
+  }).catch(function(err){document.getElementById('cst').className='cst dn';document.getElementById('cst').textContent='PERMISSION ERROR';document.getElementById('mansec').style.display='block;dbg(err)'});
+}
+function retryC(){compOn=false;evtCount=0;sm=null;hd=null;lastRaw=null;document.getElementById('mansec').style.display='none';document.getElementById('retrybtn').style.display='none';document.getElementById('hdg').textContent='---°';document.getElementById('hdi').textContent='AWAITING SIGNAL';initC()}
+
+// === BOOT ===
+rM();ufc();rC();bT();bS();uLog();buildScoring();buildEquip();initC();
+</script>
+</body>
+</html>
